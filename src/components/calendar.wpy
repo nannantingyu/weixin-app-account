@@ -1,0 +1,250 @@
+<style>
+    @import "../style/weui.wxss";
+    @import "../style/style.wxss";
+    @import "../style/calendar.wxss";
+</style>
+<template>
+    <view id="calendar" class=" calendar">
+        <view class="navigator">
+            <picker class="month col-md-6" @change="changeYear" value="{{year_index}}" range="{{years}}">{{year}}</picker>
+            <image src="../images/left.png" @tap="prevMonth()" class="arrow col-md-1" alt=""></image>
+            <picker class="year col-md-2" @change="changeMonth" value="{{month_index}}" range="{{monthes}}">{{month}}</picker>
+            <image src="../images/right.png" @tap="nextMonth()" class="arrow col-md-1" alt=""></image>
+            <view class="today col-md-6" @tap="backToToday()">今天</view>
+        </view>
+        <view class="weeks">
+            <view>一</view><view>二</view><view>三</view><view>四</view><view>五</view><view>六</view><view>日</view>
+        </view>
+        <view class="days" @touchstart="touchstart" @touchmove="touchmove" @touchend="touchend">
+            <view class="day-row">
+                <view wx:for="{{datas}}" @longpress="addAccount({{item.time}})" @tap="selectDay({{item.time}})" data-time="{{item.time}}" class="dl {{item.className}}">
+                    <view class="dt">{{item.date}}</view>
+                    <view class="dd" data-value="0">¥{{item.value}}</view>
+                </view>
+            </view>
+        </view>
+        <view>
+            <button @tap="sureSelect">确定</button>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy"
+
+    export default class calendar extends wepy.component {
+        data = {
+            date: [1, 2, 3],
+            weeks: [],
+            years: [],
+            monthes: [],
+            datas: [],
+            month_index: 0,
+            year_index: 0,
+            month: 9,
+            year: 2018,
+            day_now: null,
+            day_start: null,
+            day_end: null,
+            string_data: "",
+            touch_start: null,
+            touch_end: null,
+        };
+        methods = {
+            touchstart(e) {
+                this.touch_start = e.touches[0];
+                console.log("start", this.touch_start);
+            },
+            touchmove(e) {
+                this.touch_end = e.touches[0];
+            },
+            touchend() {
+                if(this.touch_end && this.touch_start && Math.abs(this.touch_end['clientX'] - this.touch_start['clientX']) > 100) {
+                    this.touch_end['clientX'] > this.touch_start['clientX']?this.prevMonth(): this.nextMonth();
+                };
+
+                this.touch_start = this.touch_end = null;
+            },
+            changeYear(e) {
+                this.year_index = e.detail.value;
+                this.year = this.years[this.year_index];
+                this.get_year_month();
+            },
+            changeMonth(e) {
+                this.month_index = e.detail.value;
+                this.month = this.monthes[this.month_index];
+                this.get_year_month();
+            },
+            prevMonth() {
+                this.prevMonth();
+            },
+            nextMonth() {
+                this.nextMonth();
+            },
+            backToToday() {
+                let now = new Date();
+                this.year = now.getFullYear();
+                this.month = now.getMonth() + 1;
+                this.year_index = this.years.indexOf(this.year);
+                this.month_index = this.monthes.indexOf(this.month);
+                this.get_year_month();
+            },
+            selectDay(tm) {
+                this.day_now = tm;
+                if(this.day_start && this.day_end) {
+                    this.day_start = tm;
+                    this.day_end = null;
+                }
+                else {
+                    if(this.day_start) {
+                        if(this.day_start > tm) {
+                            this.day_end = this.day_start;
+                            this.day_start = tm;
+                        }
+                        else {
+                            this.day_end = tm;
+                        }
+
+                    }
+                    else {
+                        this.day_start = tm;
+                    }
+                }
+
+                this.resetSelect();
+            },
+            sureSelect() {
+                this.$emit("setSelectDate", {"start":  this.day_start, "end": this.day_end});
+            }
+        };
+        prevMonth() {
+            if(this.month === 1) {
+                this.month = 12;
+                this.year --;
+                this.year_index --;
+                this.month_index = 11;
+            }
+            else {
+                this.month --;
+                this.month_index --;
+            }
+
+            this.get_year_month();
+        };
+        nextMonth() {
+            if(this.month === 12) {
+                this.month = 1;
+                this.year ++;
+                this.year_index ++;
+                this.month_index = 0;
+            }
+            else {
+                this.month ++;
+                this.month_index ++;
+            }
+
+            this.get_year_month();
+        };
+        get_year_month() {
+            const month_day = [31, 28+this.leapYear(this.year), 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
+                now = new Date(),
+                today_year = now.getFullYear(),
+                today_month = now.getMonth() + 1,
+                today_day = now.getDate(),
+                last_month = this.month - 1 || 12, next_month = this.month === 12?1:this.month+1;
+
+            let first_day_of_month = new Date(this.year + "/" + this.month + "/1").getDay(),
+                days = [];
+
+            if(first_day_of_month === 1) {
+                first_day_of_month = 8;
+            }
+            else if (first_day_of_month === 0) {
+                first_day_of_month = 7;
+            }
+
+            for(let i = first_day_of_month - 2; i >= 0 ; i--) {
+                let day = month_day[last_month-1] - i;
+                days.push({
+                    "date": day,
+                    "className": "prev",
+                    "type": "prev",
+                    "value": 0,
+                    "time": Date.parse((last_month===12?this.year-1:this.year)+ "/" + last_month + "/" + day)
+                });
+            }
+
+            for(let i = 1; i <= month_day[this.month-1]; i++) {
+                let type = (this.year === today_year && this.month === today_month && i === today_day) ? "current": "normal";
+                days.push({
+                    "date": i,
+                    "value": 0,
+                    "type": type,
+                    "className": type,
+                    "time": Date.parse(this.year + "/" + this.month + "/" + i)
+                });
+            }
+
+            let next_month_day = 1, day_length = days.length;
+            for(let i = 0; i < (42 - day_length); i++) {
+                days.push({
+                    "date": next_month_day,
+                    "type": "next",
+                    "className": "next",
+                    "value": 0,
+                    "time": Date.parse((this.month === 12?this.year+1:this.year) + "/" + next_month + "/" + next_month_day++)
+                });
+            }
+
+            this.datas = days;
+            this.resetSelect();
+            this.$apply();
+        };
+        resetSelect() {
+            for(let data of this.datas) {
+                let now = new Date(),
+                    today = Date.parse(now.getFullYear() + "-" + (now.getMonth()+1) + "-" + now.getDate()).toString(),
+                    dt = data["time"];
+
+                data['className'] = data['type'];
+                if(dt === this.day_now) {
+                    data['className'] = "active";
+                }
+                if(dt === today) {
+                    data['className'] = "today";
+                }
+                if(dt === this.day_start) {
+                    data['className'] = "start";
+                }
+                else if(this.day_end && dt < this.day_end && dt > this.day_start) {
+                    data['className'] = "between";
+                }
+                else if(dt === this.day_end) {
+                    data['className'] = "end";
+                }
+            }
+        };
+        leapYear(year) {
+            return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+        };
+        buildCalendarNavigator() {
+            const now = new Date, year_now = this.year || now.getFullYear(),
+                years_before = 5, years_after = 5;
+
+            for (let i = year_now - years_before; i < year_now + years_after; i++) {
+                this.years.push(i);
+            }
+
+            for (let i = 1; i <= 12; i ++) {
+                this.monthes.push(i);
+            }
+
+            this.month_index = this.monthes.indexOf(this.month);
+            this.year_index = this.years.indexOf(this.year);
+        };
+        onLoad() {
+            this.buildCalendarNavigator();
+            this.get_year_month();
+        }
+    }
+</script>

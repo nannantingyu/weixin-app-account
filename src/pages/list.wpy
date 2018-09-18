@@ -1,0 +1,462 @@
+<template>
+    <scroll-view scroll-y="true" scroll-with-animation="true"
+                 class="list-container"
+                 bindscroll="scroll"
+                 @touchstart="touchstart"
+                 @touchend="touchend"
+                 style="max-height: {{list_height}}px;">
+        <repeat for="{{accounts}}" item="item">
+            <view
+                @touchstart="touchEditStart"
+                @touchmove="touchEditMove"
+                @touchend="touchEditEnd"
+                animation="{{animations[item.id]}}"
+                id="item{{item.id}}"
+                class="table list-main">
+                <view class="table-cell item-icon">
+                    <image src="../images/{{item.icon || '默认.png'}}" class="account_icon" alt="账本"></image>
+                </view>
+                <view class="table-cell item-info">
+                    <navigator url="/pages/sublist?id={{item.id}}"
+                               @longpress="editOrDelete"
+                               class="table w100 h100">
+                        <view class="table-row">
+                            <view class="table-cell list-info">
+                                <view class="list-info-title flex">
+                                    {{item.account_type}}
+                                </view>
+                                <view class="list-info-description">
+                                    {{item.account_description}}
+                                </view>
+                            </view>
+                            <view class="table-cell list-count">{{item.accounts.length}}</view>
+                        </view>
+                    </navigator>
+                </view>
+                <view class="table-cell item-menu">
+                    <view class="w50 h100 menu menu-edit" @tap="edit({{item.id}})">编辑</view>
+                    <view class="w50 h100 menu menu-remove" @tap="remove({{item.id}})">删除</view>
+                </view>
+            </view>
+        </repeat>
+    </scroll-view>
+    <view class="dialog" hidden="{{!showModel}}">
+        <view class="dialog-background"></view>
+        <view class="dialog-content">
+            <view class="dialog-title">获取授权</view>
+            <view class="dialog-body white-content">
+                小尧账本需要获取您的用户信息，请前往设置
+            </view>
+            <view class="dialog-footer">
+                <button open-type="getUserInfo" class="dialog-success" style="width:50%" bindgetuserinfo="getUserCallBack">去设置</button>
+                <button style="width:50%" class="dialog-success"  @tap="cancelSetting">取消</button>
+            </view>
+        </view>
+    </view>
+
+    <view class="dialog" hidden="{{!newAccount}}">
+        <view class="dialog-background"></view>
+        <view class="dialog-content padding-5">
+            <view class="dialog-title">
+                {{account_dialog_title}}
+                <view class="close-dialog" @tap="closeDialog">X</view>
+            </view>
+            <scroll-view scroll-y="true" scroll-with-animation="true" class="dialog-body">
+                <form bindsubmit="formSubmit">
+                    <view class="weui-cells__title has-icon flex form-icon">
+                        <view class="image-container">
+                            <image src="../images/name.png"></image>
+                        </view>
+                        <view class="one-line-input">
+                            <input class="weui-textarea" maxlength="200" id="account_type"
+                                   name="account_type"
+                                   value="{{account_type}}" placeholder="请输入账本名称"/>
+                        </view>
+                    </view>
+
+                    <view class="weui-cells__title has-icon flex form-icon">
+                        <view class="image-container">
+                            <image src="../images/描述.png"></image>
+                        </view>
+                        <view class="one-line-input">
+                            <input class="weui-textarea" maxlength="200" id="account_description"
+                                   name="account_description"
+                                   value="{{account_description}}" placeholder="请输入账本描述"/>
+                        </view>
+                    </view>
+
+                    <view class="weui-cells__title has-icon flex form-icon padding-10">
+                        <view class="image-container">
+                            <image src="../images/描述.png"></image>
+                        </view>
+                        <view class="one-line-input">
+                            <image style="width: 30px; height: 30px;" @tap="selectIcon" src="../images/{{iconPath}}"></image>
+                        </view>
+                    </view>
+
+
+                    <view class="weui-btn-area">
+                        <button class="weui-btn dialog-success" formType="submit">{{button_text}}</button>
+                    </view>
+                </form>
+            </scroll-view>
+        </view>
+    </view>
+
+    <view class="dialog" hidden="{{!iconPick}}">
+        <view class="dialog-background"></view>
+        <view class="dialog-content padding-10">
+            <view class="dialog-title">选择图标
+                <view class="close-dialog" @tap="closeIconDialog">X</view>
+            </view>
+            <view class="dialog-body">
+                <scroll-view scroll-y="true" scroll-with-animation="true"
+                             class="icon-scroller">
+                    <iconPicker></iconPicker>
+                </scroll-view>
+            </view>
+        </view>
+    </view>
+    <button class="weui-btn add-account" @tap="addNewAccount" type="primary">+</button>
+</template>
+
+<script>
+    import wepy from "wepy"
+    import iconPicker from "../components/pick-icon"
+
+    export default class List extends wepy.page {
+        config = {
+            enablePullDownRefresh: true,
+            navigationBarTitleText: "我的账本",
+        };
+
+        components = {
+            iconPicker: iconPicker
+        };
+
+        data = {
+            accounts: [],
+            list_height: 0,
+            newAccount: false,
+            iconPick: false,
+            showModel: false,
+            account_type: "",
+            account_description: "",
+            tstart: null,
+            tend: null,
+            scroll_top: 0,
+            requesting: false,
+            iconPath: "default.png",
+            marginLeft: 0,
+            animations: {},
+            itemTouchStart: null,
+            itemTouchEnd: null,
+            account_dialog_title: "添加账本",
+            button_text: "添加",
+            item_id: null
+        };
+
+        methods = {
+            edit(id) {
+                this.item_id = id;
+                let data = this.accounts.find(x=>x.id === id);
+                this.account_type = data['account_type'];
+                this.account_description = data['account_description'];
+                this.iconPath = data['icon'];
+                this.account_dialog_title = "编辑账单";
+                this.button_text = "编辑";
+
+                let animation = wx.createAnimation({
+                    duration: 400,
+                    timingFunction: "ease",
+                    delay: 0,
+                    transformOrigin: "50% 50%",
+                });
+
+                animation.translate(0 ,0).step();
+                this.animations[id] = animation.export();
+
+                this.newAccount = true;
+            },
+            remove(id) {
+                const _this = this;
+                let animation = wx.createAnimation({
+                    duration: 400,
+                    timingFunction: "ease",
+                    delay: 0,
+                    transformOrigin: "50% 50%",
+                });
+
+                animation.translate(0 ,0).step();
+                this.animations[id] = animation.export();
+
+                wx.showLoading({ title: '正在删除...' });
+                wepy.request({
+                    data: {'wx_id': _this.$parent.globalData.openid, 'id':id},
+                    url: _this.$parent.globalData.api_host + 'api/removeAccountType',
+                    success: function (data) {
+                        let index = _this.accounts.findIndex(x=>x.id === id);
+                        _this.accounts.splice(index, 1);
+                        _this.$apply();
+                        wx.hideLoading();
+                    }
+                });
+            },
+            change_description(e) {
+                this[e.target.id] = e.detail.value;
+                this.$apply();
+            },
+            formSubmit(e) {
+                const _this = this;
+                let form_data = Object.assign(
+                    {
+                        wx_id: this.$parent.globalData.openid,
+                        icon: this.iconPath,
+                        id: this.item_id
+                    }, e.detail.value);
+
+                wepy.request({
+                    url: this.$parent.globalData.api_host + 'api/addAccountType',
+                    method: 'POST',
+                    data: form_data,
+                    success: function (d) {
+                        if(d.data.success === 1) {
+                            wx.showToast({
+                                title: "添加成功",
+                                icon: 'none',
+                                duration: 1500,
+                                success: ()=>{
+                                    _this.getAccount();
+                                    _this.closeDialog();
+                                }
+                            });
+                        }
+                        else if(d.data.success === 0){
+                            for(let msg in d.data.msg) {
+                                wx.showToast({
+                                    title: d.data.msg[msg][0],
+                                    icon: 'none',
+                                    duration: 1500,
+                                });
+                            }
+                        }
+                    }
+                })
+            },
+            closeDialog() {
+                this.closeDialog();
+            },
+            closeIconDialog() {
+                this.closeIconDialog();
+            },
+            selectIcon(e) {
+                this.iconPick = true;
+            },
+            addNewAccount() {
+                this.item_id = null;
+                if(this.$parent.globalData.authed) {
+                    this.newAccount = true;
+                    this.$apply();
+                }
+                else {
+                    wx.showToast({
+                        title: '您未允许认证，请认证',
+                        icon: 'none',
+                        duration: 1500,
+                        success: ()=> {
+                            this.showModel = true;
+                            this.$apply();
+                        }
+                    });
+                }
+            },
+            cancelSetting() {
+                this.showModel = false;
+            },
+            refresh(e) {
+                wx.startPullDownRefresh();
+            },
+            touchstart(e) {
+                this.tstart = e.touches[0];
+            },
+            touchend(e) {
+                this.tend = e.changedTouches[0];
+                if(this.scroll_top < 10 && this.tend && this.tstart && Math.abs(this.tend['clientY'] - this.tstart['clientY']) > 150) {
+                    wx.startPullDownRefresh();
+                };
+
+                this.tstart = this.tend = null;
+            },
+            scroll(e) {
+                this.scroll_top = e.detail.scrollTop;
+            },
+            touchEditStart(e) {
+                this.itemTouchStart = e.touches[0];
+            },
+            touchEditEnd(e) {
+                this.itemTouchEnd = e.changedTouches[0];
+                let id = e.currentTarget.id.replace("item", "");
+                let animation = wx.createAnimation({
+                    duration: 400,
+                    timingFunction: "ease",
+                    delay: 0,
+                    transformOrigin: "50% 50%",
+                });
+
+                if(this.itemTouchStart.pageX > this.itemTouchEnd.pageX && Math.abs(this.itemTouchStart.pageX - this.itemTouchEnd.pageX) > 100) {
+                    animation.translate("-32%" ,0).step();
+                }
+                else if(this.itemTouchStart.pageX < this.itemTouchEnd.pageX && Math.abs(this.itemTouchStart.pageX - this.itemTouchEnd.pageX) > 60) {
+                    animation.translate(0 ,0).step();
+                }
+
+                this.animations[id] = animation.export();
+            }
+        };
+        events = {
+            setIcon(iconPath) {
+                this.iconPath = iconPath;
+                this.closeIconDialog();
+            }
+        };
+        closeDialog() {
+            this.newAccount = false;
+            this.setData({
+                account_type: "",
+                account_description: ""
+            });
+
+            console.log("clear account_description");
+            this.$apply();
+        };
+        closeIconDialog() {
+            this.iconPick = false;
+        };
+        onPullDownRefresh() {
+            this.getAccount();
+        };
+        getUserCallBack (e) {
+            //设置用户信息本地存储
+            try {
+                wx.setStorageSync('userInfo', e.detail.userInfo)
+            } catch (e) {
+                wx.showToast({
+                    title: '系统提示:网络错误',
+                    icon: 'warn',
+                    duration: 1500,
+                });
+            }
+
+            this.showModel = false;
+            this.$parent.globalData.userInfo = e.detail.userInfo;
+            this.$parent.globalData.authed = true;
+            this.registUser();
+        };
+        getAccount () {
+            if(!this.requesting) {
+                const _this = this;
+                this.requesting = true;
+                wx.showLoading({ title: '加载中...' });
+                wepy.request({
+                    data: {'wx_id': _this.$parent.globalData.openid},
+                    url: _this.$parent.globalData.api_host + 'api/accountType',
+                    success: function (data) {
+                        _this.accounts = data.data.data;
+                        _this.$apply();
+                        wx.hideLoading();
+                        _this.requesting = false;
+
+                        let animations = {};
+                        for(let x of _this.accounts) {
+                            animations[x['id']] = "";
+                        }
+
+                        _this.animations = animations;
+                    }
+                });
+            }
+        };
+        registUser() {
+            const _this = this;
+
+            wepy.request({
+                url: _this.$parent.globalData.api_host + 'api/addWxUser',
+                data: {
+                    'wx_id': _this.$parent.globalData.openid,
+                    'wx_name': _this.$parent.globalData.userInfo.nickName,
+                    'avatar': _this.$parent.globalData.userInfo.avatarUrl,
+                    'gender': _this.$parent.globalData.userInfo.gender,
+                    'country': _this.$parent.globalData.userInfo.country,
+                    'province': _this.$parent.globalData.userInfo.province,
+                    'city': _this.$parent.globalData.userInfo.city,
+                },
+                method: 'POST',
+                success: function(data) {
+                    _this.getAccount();
+                }
+            });
+        };
+        onLoad() {
+            let _this = this;
+            _this.list_height = wx.getSystemInfoSync().screenHeight;
+            if(!_this.$parent.globalData.openid) {
+                wx.login({
+                   success: function(data) {
+                       _this.$apply();
+                       wx.request({
+                           url: _this.$parent.globalData.api_host + 'api/getWxOpenid',
+                           data: {"code": data.code},
+                           header: {
+                               'content-type': 'application/json'
+                           },
+                           success: function(data) {
+                               _this.$parent.globalData.openid = data.data.data.openid;
+                               wx.getSetting({
+                                   success: (res) => {
+                                       if(!res.authSetting['scope.userInfo']) {
+                                           _this.showModel = true;
+                                       }
+                                       else {
+                                           _this.showModel = false;
+                                           _this.$parent.globalData.authed = true;
+                                           let userInfo = wx.getStorageSync('userInfo');
+                                           if(!userInfo) {
+                                               wepy.request({
+                                                   url: _this.$parent.globalData.api_host + 'api/getUserInfo',
+                                                   data: {
+                                                       'wx_id': _this.$parent.globalData.openid,
+                                                   },
+                                                   success: function(data) {
+                                                        if(data.data.success === 1) {
+                                                            _this.$parent.globalData.userInfo = data.data.data;
+                                                            wx.setStorageSync('userInfo', data.data.data);
+                                                            _this.registUser();
+                                                        }
+                                                   }
+                                               });
+                                           }
+                                           else {
+                                               _this.$parent.globalData.userInfo = userInfo;
+                                               _this.registUser();
+                                           }
+                                       }
+
+                                       _this.$apply();
+                                   }
+                               });
+                           },
+                       });
+                   }
+                });
+            }
+            else{
+                _this.getAccount();
+            }
+        }
+    }
+</script>
+<style>
+    @import "../style/weui.wxss";
+    @import "../style/dialog.wxss";
+    @import "../style/style.wxss";
+</style>

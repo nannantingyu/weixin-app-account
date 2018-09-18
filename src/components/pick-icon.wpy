@@ -1,0 +1,98 @@
+<template>
+    <view class="icon-container">
+        <repeat for="{{icons}}" key="index" item="item">
+            <view class="icon-item" @tap="selectIcon({{item}})">
+                <view class="tag">{{index}}</view>
+                <image src="../images/{{item}}"></image>
+            </view>
+        </repeat>
+    </view>
+</template>
+
+<script>
+    import wepy from 'wepy'
+
+    export default class Panel extends wepy.component {
+        data = {
+            icons: {
+                "书": "书.png",
+                "交通": "交通.png",
+                "价格": "价格.png",
+                "交通": "交通.png",
+                "伞": "伞.png",
+                "住宿": "住宿.png",
+                "公交": "公交.png",
+                "名字": "名字.png",
+                "多云": "多云.png",
+                "大米": "大米.png",
+                "太阳": "太阳.png",
+                "孩子": "孩子.png",
+                "工资": "薪资.png",
+                "房子": "house.png",
+                "手机": "手机.png",
+                "投资": "投资.png",
+                "描述": "描述.png",
+                "旅行": "travel.png",
+                "晚上": "晚上.png",
+                "晴天": "晴天.png",
+                "月亮": "月亮.png",
+                "杯子": "杯子.png",
+                "水果": "水果.png",
+                "汽车": "汽车.png",
+                "游戏": "游戏.png",
+                "火车": "train.png",
+                "父母": "父母.png",
+                "狗": "狗.png",
+                "猫": "猫.png",
+                "玩具": "玩具.png",
+                "电影": "电影.png",
+                "电脑": "电脑.png",
+                "礼物": "礼物.png",
+                "网": "网.png",
+                "耳机": "耳机.png",
+                "股票": "股票.png",
+                "自行车": "自行车.png",
+                "船": "船.png",
+                "蔬菜": "菜.png",
+                "蘑菇": "蘑菇.png",
+                "衣服": "衣服.png",
+                "袜子": "sock.png",
+                "话费": "话费.png",
+                "身份证": "身份证.png",
+                "通知": "通知.png",
+                "阴天": "阴天.png",
+                "雨": "雨.png",
+                "飞机": "飞机.png",
+                "麦克风": "麦克风.png"
+            }
+        };
+
+        methods = {
+            selectIcon(item) {
+                this.$emit("setIcon", item);
+            }
+        }
+    }
+</script>
+<style>
+    @import "../style/style.wxss";
+    .icon-container {
+        display:-webkit-box;
+        display:-webkit-flex;
+        display:flex;
+        flex-wrap: wrap;
+    }
+    .icon-item {
+        width: 20%;
+        text-align: center;
+        padding: 10px 0;
+    }
+    .icon-item .tag{
+        width: 100%;
+        font-size: 14px;
+    }
+    .icon-item image {
+        width: 30px;
+        height: 30px;
+    }
+</style>

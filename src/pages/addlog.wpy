@@ -1,0 +1,383 @@
+<template>
+    <form bindsubmit="formSubmit">
+        <view class="weui-cells__title has-icon">
+            <view class="image-container">
+                <image src="../images/name.png" alt="选择时间"></image>
+            </view>
+            <view>选择时间</view>
+        </view>
+        <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell weui-cell_input">
+                <view class="weui-cell__bd">
+                    <view class="flex date-select">
+                        <view class="date-start" @tap="select_date">
+                            <view class="date-select-info">开始</view>
+                            <view class="date-select-value">{{start_date}}</view>
+                        </view>
+                        -
+                        <view class="date-end" @tap="select_date">
+                            <view class="date-select-info">结束</view>
+                            <view class="date-select-value">{{end_date}}</view>
+                        </view>
+                        <!--<button @tap="select_date">选择</button>-->
+                    </view>
+                </view>
+            </view>
+        </view>
+
+        <view class="weui-cells__title has-icon flex">
+            <view class="image-container">
+                <image src="../images/描述.png"></image>
+            </view>
+            <view>单价</view>
+            <view class="one-line-input">
+                <input class="weui-textarea" maxlength="200" id="single_price"
+                       name="single_price"
+                       @change="changeSinglePrice"
+                       value="{{single_price}}" placeholder="请输入单价"/>
+            </view>
+        </view>
+
+        <view class="weui-cells__title has-icon flex">
+            <view class="image-container">
+                <image src="../images/描述.png"></image>
+            </view>
+            <view>数量</view>
+            <view class="one-line-input">
+                <input class="weui-textarea" maxlength="200" id="amount"
+                       name="amount"
+                       @change="changeAmount"
+                       value="{{amount}}" placeholder="请输入数量"/>
+            </view>
+        </view>
+
+        <view class="weui-cells__title has-icon flex">
+            <view class="image-container">
+                <image src="../images/描述.png"></image>
+            </view>
+            <view>总价</view>
+            <view class="one-line-input">
+                <input class="weui-textarea" maxlength="200" id="total"
+                       name="total"
+                       @change="changeTotal"
+                       value="{{total}}" placeholder="请输入总价"/>
+            </view>
+        </view>
+
+        <view class="weui-cells__title has-icon">
+            <view class="image-container">
+                <image src="../images/描述.png"></image>
+            </view>
+            <view>备注</view>
+        </view>
+        <view class="weui-cells weui-cells_after-title">
+            <view class="weui-cell">
+                <view class="weui-cell__bd account-picker">
+                    <textarea class="weui-textarea" maxlength="200" id="account_description"
+                           name="account_description"
+                           @change="changeAccountDescription"
+                           value="{{account_description}}" placeholder="请输入备注"/>
+                </view>
+            </view>
+        </view>
+
+        <view class="weui-btn-area">
+            <button class="weui-btn dialog-success" formType="submit">{{button_text}}</button>
+        </view>
+    </form>
+
+    <view class="dialog" hidden="{{!select_date}}">
+        <view class="dialog-background"></view>
+        <view class="dialog-content padding-2">
+            <view class="dialog-title">
+                {{account_dialog_title}}
+                <view class="close-dialog" @tap="closeDialog">X</view>
+            </view>
+            <view class="dialog-body">
+                <calendar></calendar>
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from "wepy"
+    import calendar from "../components/calendar"
+    import tool from "../mixins/tool"
+
+    export default class addlog extends wepy.page {
+        data = {
+            button_text: "添加",
+            account_type: "账本类型",
+            account_name: "账本名称",
+            account_description: '',
+            all_account_types: [],
+            all_account_names: [],
+            type: "收入",
+            types: ['收入', '支出'],
+            amount: "",
+            single_price: "",
+            total: "",
+            select_date: false,
+            start_date: "",
+            end_date: "",
+            start_time: "",
+            end_time: "",
+            type_index: 0,
+            account_type_index: 0,
+            account_name_index: 0,
+            requesting: false,
+            account_type_id: null,
+            account_id: null,
+            account_names: [],
+            last_edit: "price"
+        };
+        computed = {
+            account_types() {
+                let types = [];
+                this.all_account_types.forEach(x=>{types.push(x.account_type)});
+                return types;
+            },
+        };
+        mixins = [tool];
+        events = {
+            setSelectDate(data) {
+                if(data['start'] && data['end']) {
+                    this.start_time = this.time_to_date(data['start'], "YYYY-MM-DD hh:mm:ss");
+                    this.end_time = this.time_to_date(data['end'], "YYYY-MM-DD hh:mm:ss");
+                    this.start_date = this.time_to_date(data['start'], "MM-DD");
+                    this.end_date = this.time_to_date(data['end'], "MM-DD");
+                }
+
+                this.select_date = false;
+            }
+        };
+        components = {
+            calendar: calendar
+        };
+        methods = {
+            changeSinglePrice(e) {
+                this.single_price = e.detail.value;
+                this.total = Number(this.single_price * this.amount).toFixed(2);
+                this.last_edit = 'price';
+            },
+            changeAmount(e) {
+                this.amount = e.detail.value;
+                if(this.last_edit === 'price') {
+                    this.total = Number(this.single_price * this.amount).toFixed(2);
+                }
+                else if(this.amount != 0){
+                    this.single_price = Number(this.total / this.amount).toFixed(2);
+                }
+            },
+            changeAccountDescription(e) {
+                this.account_description = e.detail.value;
+            },
+            changeTotal(e) {
+                this.total = e.detail.value;
+                this.single_price = Number(this.total / this.amount).toFixed(2);
+                this.last_edit = 'total';
+            },
+            closeDialog() {
+                this.select_date = false;
+            },
+            change_type(e) {
+                this.type_index = e.detail.value;
+                this.type = this.types[this.type_index];
+            },
+            change_account_type(e) {
+                this.account_type_index = e.detail.value;
+                this.account_type = this.account_types[this.account_type_index];
+                this.account_type_id = this.all_account_types.find(x=>x.account_type === this.account_type);
+                this.getAccount();
+            },
+            change_account_name(e) {
+                this.account_name_index = e.detail.value;
+                this.account_name = this.account_names[this.account_name_index];
+                this.account_id = this.all_account_names.find(x=>x.account_name === this.account_name);
+            },
+            formSubmit(e) {
+                let _this = this, msg = null;
+                if(!this.account_id) {
+                    msg = "请选择账本";
+                }
+                else if(this.single_price == 0)
+                {
+                    msg = "请填写单价";
+                }
+                else if(this.amount == 0)
+                {
+                    msg = "请填写数量";
+                }
+
+                if(msg) {
+                    wx.showToast({
+                        title: msg,
+                        icon: 'none',
+                        duration: 1500,
+                    });
+
+                    return false;
+                }
+
+                let form_data = Object.assign(
+                    {
+                        wx_id: this.$parent.globalData.openid,
+                        start_time: this.start_time,
+                        end_time: this.end_time,
+                        account_name: this.account_id['id'],
+                        type: this.type
+                    }, e.detail.value);
+
+                wepy.request({
+                    url: this.$parent.globalData.api_host + 'api/addAccountLog',
+                    method: 'POST',
+                    data: form_data,
+                    success: function (d) {
+                        if(d.data.success === 1) {
+                            wx.showToast({
+                                title: "添加成功",
+                                icon: 'none',
+                                duration: 1500,
+                                success: ()=>{
+                                    _this.resetForm();
+                                }
+                            });
+                        }
+                        else if(d.data.success === 0){
+                            for(let msg in d.data.msg) {
+                                wx.showToast({
+                                    title: d.data.msg[msg][0],
+                                    icon: 'none',
+                                    duration: 1500,
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+        };
+        select_date() {
+            this.select_date = true;
+        }
+        getAccountTypes () {
+            if(!this.requesting) {
+                const _this = this;
+                this.requesting = true;
+                wx.showLoading({ title: '加载中...' });
+                wepy.request({
+                    data: {'wx_id': _this.$parent.globalData.openid},
+                    url: _this.$parent.globalData.api_host + 'api/accountType',
+                    success: function (data) {
+                        _this.all_account_types = data.data.data;
+                        _this.requesting = false;
+                        _this.$apply();
+                        wx.hideLoading();
+                    }
+                });
+            }
+        };
+        resetForm() {
+            const now = new Date();
+            this.start_date = this.time_to_date(now.getTime(), "MM-DD");
+            this.end_date = this.time_to_date(now.getTime(), "MM-DD");
+            this.start_time = this.time_to_date(now.getTime(), "YYYY-MM-DD hh:mm:ss");
+            this.end_time = this.time_to_date(now.getTime(), "YYYY-MM-DD hh:mm:ss");
+            this.account_id = null;
+            this.single_price = "";
+            this.amount = "";
+            this.total = "";
+            this.account_type = "账本类型";
+            this.account_name = "账本名称";
+            this.account_type_index = 0;
+            this.account_name_index = 0;
+            this.account_description = '';
+            this.$apply();
+        }
+        getAccount() {
+            if(!this.requesting && this.account_type_id) {
+                const _this = this;
+                this.requesting = true;
+                wepy.request({
+                    url: this.$parent.globalData.api_host + "api/account",
+                    data: {
+                        wx_id: this.$parent.globalData.openid,
+                        account_type: this.account_type_id['id']
+                    },
+                    success: function (data) {
+                        if (data.data.success === 1) {
+                            _this.all_account_names = data.data.data;
+                            _this.requesting = false;
+                            let account_names = [];
+                            _this.all_account_names.forEach(x=>{account_names.push(x.account_name)});
+                            _this.account_names = account_names;
+                            _this.account_name = account_names[0];
+                            _this.account_id = _this.all_account_names[0];
+                            _this.$apply();
+                        }
+                    }
+                });
+            }
+        };
+        onLoad() {
+            this.resetForm();
+            this.getAccountTypes();
+        }
+    }
+</script>
+<style>
+    @import "../style/weui.wxss";
+    @import "../style/style.wxss";
+    @import "../style/dialog.wxss";
+
+    .one-line-input {
+        margin-left: 10px;
+        width: 75%;
+    }
+    .has-icon .image-container image {
+        margin-top: 2px;
+    }
+
+    .account-picker {
+        display: flex;
+    }
+
+    .account-picker picker {
+        line-height: 45px;
+        margin: 13px 5px;
+        text-align: center;
+        border: 1px solid #ddd;
+        font-size: 13px;
+    }
+    .account-picker .select-account {
+        width: 70%;
+    }
+    .account-picker .select-account-type {
+        width: 26%;
+    }
+    .account-picker .select-type {
+        width: 18%;
+    }
+
+    .date-select .date-start {
+        margin-right: 13px;
+    }
+    .date-select .date-end {
+        margin-left: 13px;
+    }
+    .date-select-info {
+        font-size: 12px;
+        color: #bbb;
+        margin-top:3px;
+    }
+    .date-select .date-start, .date-select .date-end {
+        width: 43%;
+        text-align: center;
+        font-size: 16px;
+        margin-top: 10px;
+        margin-bottom: 10px;
+        height: 45px;
+        border: 1px solid #ddd;
+        border-radius: 3px;
+    }
+</style>

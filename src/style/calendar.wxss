@@ -1,0 +1,94 @@
+.calendar {
+    width: 100%;
+    padding: 5px 0px;
+    text-align: center;
+}
+.weeks {
+    line-height: 45px;
+    border-bottom: 1px solid #999;
+}
+.weeks view{
+    display: inline-block;
+    width: 14%;
+}
+.day-row {
+    line-height: 30px;
+}
+.day-row view.dl {
+    width: 14%;
+    margin: 8px 0;
+    display: inline-block;
+}
+.day-row view.dl:hover {
+    background: #000;
+    cursor: pointer;
+}
+.day-row view.dl:hover .dt {
+    color: #fff;
+}
+.day-row .dl .dd {
+    -webkit-margin-start: 0;
+    font-size: 12px;
+    color: orangered;
+    height: 20px;
+    line-height: 20px;
+}
+
+.navigator {
+    flex-direction: row;
+    display: flex;
+    padding: 5px 0;
+    border-bottom: 1px solid #ccc;
+}
+
+.dl.prev .dt {
+    color: #ccc;
+}
+.dl.prev .dd {
+    color: #48a;
+}
+
+.dl.next .dt {
+    color: #ccc;
+}
+.dl.next .dd {
+    color: #48a;
+}
+.start, .end {
+    background: #4488aa;
+}
+.between {
+    background: cadetblue;
+}
+
+.between .dd, .current .dd {
+    color: #fff;
+    font-size: 14px;
+}
+
+.today .dd {
+    color: green;
+    font-size: 14px;
+}
+
+.arrow {
+    display: inline-block;
+    width: 15px !important;
+    height: 15px !important;
+    margin-top: 12px;
+}
+
+.arrow.left {
+    background-image: url("../images/left.png");
+}
+
+.arrow.right {
+    background-image: url("../images/right.png");
+}
+
+.dl.today {
+    background: yellow;
+}
+.dl.current {
+    background: darkorange;
+}

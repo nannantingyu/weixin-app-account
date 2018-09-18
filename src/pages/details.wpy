@@ -1,0 +1,132 @@
+<template>
+    <view class="page">
+        <view class="flex top">
+            <view class="select-date">
+                <view class="title">2018年</view>
+                <view class="month">
+                    <picker mode="date">
+                        09月 <image src="../images/down.png" style="width: 12px;height: 12px;"></image>
+                    </picker>
+                </view>
+            </view>
+            <view class="account_in">
+                <view class="title">收入</view>
+                <view class="value">0.00</view>
+            </view>
+            <view class="account_out">
+                <view class="title">支出</view>
+                <view class="value">0.00</view>
+            </view>
+        </view>
+        <scroll-view class="list-container" scroll-y="true" scroll-with-animation="true">
+            <repeat for="{{accounts.days}}" item="item" key="index">
+                <view class="day-title">{{index}}</view>
+                <view class="day-info-container">
+                    <repeat for="{{item}}" item="child">
+                        <view class="flex day-info">
+                            <view class="image"><image src="../images/{{account_names[child.account_name]['icon'] || 'default.png'}}"></image></view>
+                            <view class="account_name">{{account_names[child.account_name]['account_name']}}</view>
+                            <view class="account_price">{{child.single_price * child.amount}}</view>
+                        </view>
+                    </repeat>
+                </view>
+            </repeat>
+        </scroll-view>
+    </view>
+</template>
+<script>
+    import wepy from "wepy"
+    export default class Details extends wepy.page {
+        config = {
+            navigationBarTitleText: "账本明细",
+        };
+
+        data = {
+            accounts: [],
+            account_names: {}
+        };
+
+        getMonthData() {
+            const _this = this;
+            wepy.request({
+                data: {'wx_id': _this.$parent.globalData.openid},
+                url: _this.$parent.globalData.api_host + 'api/account',
+                success: function (data) {
+                    _this.account_names = data.data.data;
+                    console.log(_this.account_names);
+                    for(let op of data.data.data) {
+                        if(op) {
+                            _this.account_names[op.id] = op;
+                        }
+                    }
+
+                    console.log(_this.account_names);
+                    wepy.request({
+                        data: {'wx_id': _this.$parent.globalData.openid},
+                        url: _this.$parent.globalData.api_host + 'api/getMonthAll',
+                        success: function (data) {
+                            _this.accounts = data.data.data;
+                            console.log(_this.accounts);
+                            _this.$apply();
+                            wx.hideLoading();
+                        }
+                    });
+                }
+            });
+
+        };
+        onLoad() {
+            this.getMonthData();
+        };
+    }
+</script>
+
+<style>
+    @import "../style/style.wxss";
+    @import "../style/weui.wxss";
+    .image {
+        padding-top: 3px;
+        margin: 3px -11px 3px 5px;
+        width: 10%;
+    }
+    .account_name {
+        width: 80%;
+    }
+    .account_price {
+        width: 10%;
+    }
+    .image image {
+        width: 15px;
+        height: 15px;
+    }
+    .day-title {
+        border-bottom: 1px solid #ddd;
+        font-size: 13px;
+        color: #888;
+        margin-top: 18px
+    }
+    .day-info {
+        font-size: 14px;
+        width: 95%;
+        margin-left: 3%;
+    }
+    .select-date {
+        width: 44%;
+    }
+    .account_in {
+        width: 46%;
+    }
+    .top {
+        background: #ffce1d;
+        padding: 5px 20px;
+        font-size: 15px;
+        height: 10%;
+    }
+    .list-container {
+        padding: 5px;
+        height: 85%;
+    }
+    .day-info-container {
+        padding: 7px 0;
+    }
+</style>

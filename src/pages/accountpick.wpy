@@ -1,0 +1,168 @@
+<template>
+    <view class="page">
+        <view class="top-container">
+            <view class="type-select">
+                <view class="type-item item-left active">收入</view>
+                <view class="type-item item-right">支出</view>
+                <view class="clear"></view>
+            </view>
+        </view>
+        <view class="picker">
+            <picker range="{{account_types}}" @change="change_account_type" value="{{account_type_index}}">{{account_type}}</picker>
+        </view>
+        <scroll-view scroll-y="true" scroll-with-animation="true" class="middle-container">
+            <view class="flex flex-wrap">
+                <repeat for="{{all_account_names}}" item="item">
+                    <navigator class="sub-item" url="/pages/addlog?id={{item.id}}">
+                        <view class="item-image">
+                            <image src="../images/{{item.icon}}"></image>
+                        </view>
+                        <view class="item-text">
+                            {{item.account_name}}
+                        </view>
+                    </navigator>
+                </repeat>
+            </view>
+        </scroll-view>
+    </view>
+
+</template>
+<script>
+    import wepy from "wepy";
+    export default class Accountpick extends wepy.page {
+        data = {
+            all_account_types: [],
+            all_account_names: [],
+            account_type_index: 0,
+            account_name_index: 0,
+            account_type: "账本类型",
+            account_name: "账本名称",
+            account_names: [],
+            requesting: false,
+            account_type_id: null,
+            account_name_id: null
+        };
+        computed = {
+            account_types() {
+                let types = [];
+                this.all_account_types.forEach(x=>{types.push(x.account_type)});
+                return types;
+            },
+        };
+        methods = {
+            change_account_type(e) {
+                this.account_type_index = e.detail.value;
+                this.account_type = this.account_types[this.account_type_index];
+                this.account_type_id = this.all_account_types.find(x=>x.account_type === this.account_type);
+                this.getAccount();
+            },
+        };
+        getAccountTypes () {
+            if(!this.requesting) {
+                const _this = this;
+                this.requesting = true;
+                wx.showLoading({ title: '加载中...' });
+                wepy.request({
+                    data: {'wx_id': _this.$parent.globalData.openid},
+                    url: _this.$parent.globalData.api_host + 'api/accountType',
+                    success: function (data) {
+                        _this.all_account_types = data.data.data;
+                        _this.account_type_id = data.data.data[0];
+                        _this.account_type_index = 0;
+                        _this.account_type = _this.account_type_id['account_type'];
+                        _this.requesting = false;
+                        _this.getAccount();
+                        _this.$apply();
+                        wx.hideLoading();
+                    }
+                });
+            }
+        };
+        getAccount() {
+            if(!this.requesting && this.account_type_id) {
+                const _this = this;
+                this.requesting = true;
+                wepy.request({
+                    url: this.$parent.globalData.api_host + "api/account",
+                    data: {
+                        wx_id: this.$parent.globalData.openid,
+                        account_type: this.account_type_id['id']
+                    },
+                    success: function (data) {
+                        if (data.data.success === 1) {
+                            _this.all_account_names = data.data.data;
+                            _this.requesting = false;
+                            let account_names = [];
+                            _this.all_account_names.forEach(x=>{account_names.push(x.account_name)});
+                            _this.account_names = account_names;
+                            _this.account_name = account_names[0];
+                            _this.account_id = _this.all_account_names[0];
+                            console.log(_this.all_account_names);
+                            _this.$apply();
+                        }
+                    }
+                });
+            }
+        };
+
+        onLoad() {
+            this.getAccountTypes();
+        }
+    }
+</script>
+<style>
+    @import "../style/style.wxss";
+    @import "../style/weui.wxss";
+    .sub-item .item-image image {
+        width: 25px;
+        height: 25px;
+    }
+    .picker {
+        height:7%;
+        text-align:center;
+        padding-top:3%;
+    }
+    .picker picker {
+        border-top: 1px solid #ccc;
+        border-bottom: 1px solid #ccc;
+    }
+    .top-container {
+        height: 10%;
+        background: #ffce1d;
+    }
+    .middle-container {
+        height: 87%;
+    }
+    .type-select {
+        width: 60%;
+        margin: 0px auto;
+        padding: 20px 0 10px;
+    }
+    .type-item {
+        width: 49%;
+        text-align: center;
+        float: left;
+        border: 1px solid #999;
+    }
+    .type-item.active {
+        background: #0f0f0f;
+        color: #fff;
+    }
+    .type-item.item-left {
+        border-right: none;
+        border-radius: 5px 0 0 5px;
+    }
+    .type-item.item-right {
+        border-left: none;
+        border-radius: 0 5px 5px 0;
+    }
+    .sub-item {
+        width: 25%;
+        text-align: center;
+        margin: 5px 0 25px;
+    }
+
+    .sub-item .item-text{
+        font-size: 10px;
+    }
+</style>

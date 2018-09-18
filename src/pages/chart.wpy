@@ -1,0 +1,14 @@
+<template>
+
+</template>
+
+<script>
+    import wepy from "wepy"
+    export default class chart extends wepy.page {
+
+    }
+</script>
+
+<style>
+
+</style>

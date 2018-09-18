@@ -1,0 +1,99 @@
+<style lang="less">
+    .container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        box-sizing: border-box;
+    }
+</style>
+
+<script>
+    import wepy from 'wepy'
+    import 'wepy-async-function'
+
+    import {setStore} from 'wepy-redux'
+    import configStore from './store'
+
+    const store = configStore();
+    setStore(store);
+
+    export default class extends wepy.app {
+        config = {
+            pages: [
+                'pages/list',
+                'pages/calendar',
+                'pages/sublist',
+                'pages/addlog',
+                'pages/mine',
+                'pages/details',
+                'pages/chart',
+                'pages/accountpick',
+            ],
+            window: {
+                backgroundTextStyle: 'dark',
+                navigationBarBackgroundColor: '#fff',
+                navigationBarTitleText: 'WeChat',
+                navigationBarTextStyle: 'black',
+                navigationBarBackgroundColor: '#ffce1d'
+            },
+            tabBar: {
+                "list": [{
+                    "pagePath": "pages/details",
+                    "text": "明细",
+                    "iconPath": "images/菜.png",
+                    "selectedIconPath": "images/耳机.png"
+                }, {
+                    "pagePath": "pages/list",
+                    "text": "账本",
+                    "iconPath": "images/电影.png",
+                    "selectedIconPath": "images/房子.png"
+                }, {
+                    "pagePath": "pages/accountpick",
+                    "text": "添加",
+                    "iconPath": "images/孩子.png",
+                    "selectedIconPath": "images/狗.png"
+                }, {
+                    "pagePath": "pages/chart",
+                    "text": "统计",
+                    "iconPath": "images/雨.png",
+                    "selectedIconPath": "images/飞机.png"
+                }, {
+                    "pagePath": "pages/chart",
+                    "text": "我的",
+                    "iconPath": "images/猫.png",
+                    "selectedIconPath": "images/玩具.png"
+                }]
+            },
+        };
+
+        globalData = {
+            userInfo: null,
+            api_host: "https://www.yjshare.cn/",
+            // api_host: "http://lavue.com/"
+        };
+
+        constructor() {
+            super();
+            this.use('requestfix');
+            // this.use('promisify');
+        }
+
+        onLaunch() {
+            this.testAsync()
+        }
+
+        sleep(s) {
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    resolve('promise resolved')
+                }, s * 1000)
+            })
+        }
+
+        async testAsync() {
+            const data = await this.sleep(3)
+        }
+    }
+</script>

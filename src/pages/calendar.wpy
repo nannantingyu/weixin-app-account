@@ -1,0 +1,49 @@
+<style>
+    @import "../style/weui.wxss";
+    @import "../style/style.wxss";
+    @import "../style/calendar.wxss";
+</style>
+<template>
+    <calendarComponent></calendarComponent>
+</template>
+
+<script>
+    import wepy from "wepy"
+    import calendarComponent from "../components/calendar"
+
+    export default class calendar extends wepy.page {
+        data = {
+            requesting: false,
+            accounts: [],
+            account_id: null
+        };
+        components = {
+            calendarComponent: calendarComponent
+        };
+        getAccountLog() {
+            if(!this.requesting) {
+                const _this = this;
+                this.requesting = true;
+                wepy.request({
+                    url: this.$parent.globalData.api_host + "api/accountLog",
+                    data: {
+                        wx_id: this.$parent.globalData.openid,
+                        account_id: this.account_id
+                    },
+                    success: function (data) {
+                        if (data.data.success === 1) {
+                            _this.accounts = data.data.data;
+                            _this.requesting = false;
+                            _this.$apply();
+                        }
+                    }
+                });
+            }
+        }
+        onLoad(option) {
+            console.log(option)
+            this.account_id = option.id? option.id : 1;
+            this.getAccountLog();
+        }
+    }
+</script>

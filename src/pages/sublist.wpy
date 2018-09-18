@@ -1,0 +1,362 @@
+<template>
+    <view class="list-container"
+          scroll-y="true" scroll-with-animation="true"
+          bindscroll="scroll"
+          @touchstart="touchstart"
+          @touchend="touchend"
+          style="max-height: {{list_height}}px;max-width: 100%;">
+        <repeat for="{{accounts}}" item="item">
+            <view
+                @touchstart="touchEditStart"
+                @touchmove="touchEditMove"
+                @touchend="touchEditEnd"
+                animation="{{animations[item.id]}}"
+                id="item{{item.id}}"
+                class="table list-main">
+                <view class="table-cell item-info">
+                    <view class="table-cell item-icon">
+                        <image src="../images/{{item.icon || '默认.png'}}" class="account_icon" alt="账本"></image>
+                    </view>
+
+                    <view class="table-cell item-info">
+                        <navigator url="/pages/calendar?id={{item.id}}"
+                                   @longpress="editOrDelete"
+                                   class="table w100 h100">
+                            <view class="table-row">
+                                <view class="table-cell list-info">
+                                    <view class="list-info-title">
+                                        {{item.account_name}}
+                                    </view>
+                                    <view class="list-info-description">
+                                        {{item.account_description}}
+                                    </view>
+                                </view>
+                                <view class="table-cell list-count">{{item.logs.length}}</view>
+                            </view>
+                        </navigator>
+                    </view>
+                </view>
+                <view class="table-cell item-menu">
+                    <view class="w50 h100 menu menu-edit" @tap="edit({{item.id}})">编辑</view>
+                    <view class="w50 h100 menu menu-remove" @tap="remove({{item.id}})">删除</view>
+                </view>
+            </view>
+        </repeat>
+    </view>
+
+    <view class="dialog" hidden="{{!newAccount}}">
+        <view class="dialog-background"></view>
+        <view class="dialog-content padding-5">
+            <view class="dialog-title">
+                {{account_dialog_title}}
+                <view class="close-dialog" @tap="closeDialog">X</view>
+            </view>
+            <form bindsubmit="formSubmit">
+                <scroll-view scroll-y="true" scroll-with-animation="true" class="dialog-body">
+                    <view class="weui-cells__title has-icon flex form-icon">
+                        <view class="image-container">
+                            <image src="../images/name.png"></image>
+                        </view>
+                        <view class="one-line-input">
+                            <input class="weui-textarea" maxlength="200" id="account_name"
+                                   name="account_name"
+                                   value="{{account_name}}" placeholder="请输入项目名称"/>
+                        </view>
+                    </view>
+
+                    <view class="weui-cells__title has-icon flex form-icon">
+                        <view class="image-container">
+                            <image src="../images/描述.png"></image>
+                        </view>
+                        <view class="one-line-input">
+                            <input class="weui-textarea" maxlength="200" id="account_description"
+                                   name="account_description"
+                                   value="{{account_description}}" placeholder="请输入项目描述"/>
+                        </view>
+                    </view>
+
+                    <view class="weui-cells__title has-icon flex form-icon">
+                        <view class="image-container">
+                            <image src="../images/价格.png"></image>
+                        </view>
+                        <view class="one-line-input">
+                            <input class="weui-textarea" maxlength="200" id="single_price"
+                                   name="single_price"
+                                   value="{{single_price}}" placeholder="请输入项目默认单价"/>
+                        </view>
+                    </view>
+
+                    <view class="weui-cells__title has-icon flex form-icon padding-10">
+                        <view class="image-container">
+                            <image src="../images/描述.png"></image>
+                        </view>
+                        <view class="one-line-input">
+                            <image style="width: 30px; height: 30px;" @tap="selectIcon" src="../images/{{iconPath}}"></image>
+                        </view>
+                    </view>
+
+                    <button class="weui-btn dialog-success" formType="submit">{{button_text}}</button>
+                </scroll-view>
+            </form>
+        </view>
+    </view>
+    <view class="dialog" hidden="{{!iconPick}}">
+        <view class="dialog-background"></view>
+        <view class="dialog-content padding-10">
+            <view class="dialog-title">选择图标
+                <view class="close-dialog" @tap="closeIconDialog">X</view>
+            </view>
+            <view class="dialog-body">
+                <scroll-view scroll-y="true" scroll-with-animation="true"
+                             class="icon-scroller">
+                    <iconPicker></iconPicker>
+                </scroll-view>
+            </view>
+        </view>
+    </view>
+    <button class="weui-btn add-account" @tap="addNewAccount" type="primary">+</button>
+</template>
+
+<script>
+    import wepy from 'wepy'
+    import iconPicker from "../components/pick-icon"
+
+    export default class sublist extends wepy.page {
+        config = {
+            enablePullDownRefresh: true,
+            navigationBarTitleText: "子账本",
+        };
+
+        data = {
+            accounts: [],
+            id: null,
+            newAccount: false,
+            tstart: null,
+            tend: null,
+            scroll_top: 0,
+            iconPick: false,
+            iconPath: "默认.png",
+            account_description: "",
+            animations: {},
+            itemTouchStart: null,
+            itemTouchEnd: null,
+            account_dialog_title: "添加账本",
+            button_text: "添加",
+            item_id: null,
+            list_height: 0,
+            single_price: '',
+            account_name: null
+        };
+
+        components = {
+            iconPicker: iconPicker
+        };
+
+        methods = {
+            edit(id) {
+                this.item_id = id;
+                let data = this.accounts.find(x=>x.id === id);
+                this.account_name = data['account_name'];
+                this.account_description = data['account_description'];
+                this.iconPath = data['icon'];
+                this.account_dialog_title = "编辑账单";
+                this.button_text = "编辑";
+                this.single_price = data['single_price'];
+
+                let animation = wx.createAnimation({
+                    duration: 400,
+                    timingFunction: "ease",
+                    delay: 0,
+                    transformOrigin: "50% 50%",
+                });
+
+                animation.translate(0 ,0).step();
+                this.animations[id] = animation.export();
+
+                this.newAccount = true;
+            },
+            remove(id) {
+                const _this = this;
+                let animation = wx.createAnimation({
+                    duration: 400,
+                    timingFunction: "ease",
+                    delay: 0,
+                    transformOrigin: "50% 50%",
+                });
+
+                animation.translate(0 ,0).step();
+                this.animations[id] = animation.export();
+
+                wx.showLoading({ title: '正在删除...' });
+                wepy.request({
+                    data: {'wx_id': _this.$parent.globalData.openid, 'id':id},
+                    url: _this.$parent.globalData.api_host + 'api/removeAccount',
+                    success: function (data) {
+                        let index = _this.accounts.findIndex(x=>x.id === id);
+                        _this.accounts.splice(index, 1);
+                        _this.$apply();
+                        wx.hideLoading();
+                    }
+                });
+            },
+            closeDialog() {
+                this.closeDialog();
+            },
+            change_description(e) {
+                this[e.target.id] = e.detail.value;
+                this.$apply();
+            },
+            selectIcon(e) {
+                this.iconPick = true;
+            },
+            closeIconDialog() {
+                this.closeIconDialog();
+            },
+            addNewAccount() {
+                this.id = null;
+                this.newAccount = true;
+                this.$apply();
+            },
+            touchEditStart(e) {
+                this.itemTouchStart = e.touches[0];
+            },
+            touchEditEnd(e) {
+                this.itemTouchEnd = e.changedTouches[0];
+                let id = e.currentTarget.id.replace("item", "");
+                let animation = wx.createAnimation({
+                    duration: 400,
+                    timingFunction: "ease",
+                    delay: 0,
+                    transformOrigin: "50% 50%",
+                });
+
+                if(this.itemTouchStart.pageX > this.itemTouchEnd.pageX && Math.abs(this.itemTouchStart.pageX - this.itemTouchEnd.pageX) > 100) {
+                    animation.translate("-32%" ,0).step();
+                }
+                else if(this.itemTouchStart.pageX < this.itemTouchEnd.pageX && Math.abs(this.itemTouchStart.pageX - this.itemTouchEnd.pageX) > 60) {
+                    animation.translate(0 ,0).step();
+                }
+
+                this.animations[id] = animation.export();
+            },
+            refresh(e) {
+                wx.startPullDownRefresh();
+            },
+            touchstart(e) {
+                this.tstart = e.touches[0];
+            },
+            touchend(e) {
+                this.tend = e.changedTouches[0];
+                if(this.scroll_top < 10 && this.tend && this.tstart && Math.abs(this.tend['clientY'] - this.tstart['clientY']) > 150) {
+                    wx.startPullDownRefresh();
+                };
+
+                this.tstart = this.tend = null;
+            },
+            scroll(e) {
+                this.scroll_top = e.detail.scrollTop;
+            },
+            formSubmit(e) {
+                let form_data = Object.assign({
+                    wx_id: this.$parent.globalData.openid,
+                    account_type: this.account_type,
+                    icon: this.iconPath,
+                    id: this.item_id
+                }, e.detail.value), _this = this;
+
+                wepy.request({
+                    url: this.$parent.globalData.api_host + 'api/addAccount',
+                    method: 'POST',
+                    data: form_data,
+                    success: function (d) {
+                        if(d.data.success === 1) {
+                            wx.showToast({
+                                title: "添加成功",
+                                icon: 'none',
+                                duration: 1500,
+                                success: ()=>{
+                                    _this.closeDialog();
+                                    _this.getAccount();
+                                }
+                            });
+                        }
+                        else if(d.data.success === 0){
+                            for(let msg in d.data.msg) {
+                                wx.showToast({
+                                    title: d.data.msg[msg][0],
+                                    icon: 'none',
+                                    duration: 1500,
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+        };
+        events = {
+            setIcon(iconPath) {
+                this.iconPath = iconPath;
+                this.closeIconDialog();
+            }
+        };
+        closeIconDialog() {
+            this.iconPick = false;
+        };
+        onPullDownRefresh() {
+            this.getAccount();
+        };
+        closeDialog() {
+            this.newAccount = false;
+            this.setData({
+                account_name: "",
+                account_description: "",
+                single_price: ""
+            });
+
+            this.$apply();
+        };
+        onLoad(option) {
+            this.account_type = option.id;
+            this.list_height = wx.getSystemInfoSync().screenHeight;
+            console.log(this.list_height);
+            this.getAccount();
+        }
+
+        getAccount() {
+            if(!this.requesting) {
+                const _this = this;
+                this.requesting = true;
+                wepy.request({
+                    url: this.$parent.globalData.api_host + "api/account",
+                    data: {
+                        wx_id: this.$parent.globalData.openid,
+                        account_type: this.account_type
+                    },
+                    success: function (data) {
+                        if (data.data.success === 1) {
+                            _this.accounts = data.data.data;
+                            _this.requesting = false;
+                            let animations = {};
+                            for(let x of _this.accounts) {
+                                animations[x['id']] = "";
+                            }
+
+                            _this.animations = animations;
+                            _this.$apply();
+                        }
+                    }
+                });
+            }
+        };
+    }
+</script>
+
+<style scoped>
+    @import "../style/weui.wxss";
+    @import "../style/dialog.wxss";
+    @import "../style/style.wxss";
+    .icon-scroller {
+        height: 300px;
+        max-height: 300px;
+    }
+</style>

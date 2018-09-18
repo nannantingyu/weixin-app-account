@@ -1,0 +1,15 @@
+{
+	"description": "提供书评，书籍推荐，电子书下载",
+	"setting": {
+		"urlCheck": false,
+		"es6": false,
+		"postcss": false,
+		"minified": false,
+		"newFeature": true
+	},
+	"compileType": "miniprogram",
+	"appid": "wx8e4e12d6284850a5",
+	"projectname": "nannanshushe",
+	"miniprogramRoot": "./dist",
+	"condition": {}
+}

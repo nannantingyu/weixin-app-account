@@ -1,0 +1,194 @@
+page {
+    height: 100%;
+}
+.page {
+    height: 100%;
+}
+.flex-wrap {
+    flex-wrap: wrap;
+}
+.padding-10 {
+    top: 10%;
+}
+.flex {
+    display:-webkit-box;
+    display:-webkit-flex;
+    display:flex;
+    -webkit-box-align:center;
+    -webkit-align-items:center;
+    align-items:center;
+}
+.padding-5 {
+    top: 5% !important;
+}
+.padding-3 {
+    top: 3% !important;
+}
+.padding-2 {
+    top: 2% !important;
+}
+.white-content {
+    color: white;
+}
+.padding-1 {
+    top: 1%;
+}
+.list-description{
+    padding:10px 2%;
+    width: 96%;
+    font-size:13px;
+    color:#888;
+}
+.add-account {
+    position:fixed;
+    bottom:20px;
+    width:48px;
+    right:2%;
+    border-radius:24px;
+    background:#ffce1d !important;
+    color:#fff !important;
+    opacity:0.9;
+}
+.list-container {
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+.account_icon {
+    width:38rpx;
+    height:38rpx;
+    margin-top:11px;
+    margin-left:13px;
+}
+.table {
+    display: table;
+}
+.table-cell {
+    display: table-cell;
+}
+.table-row {
+    display: table-row;
+}
+.h100 {
+    height: 100%;
+}
+.item-icon {
+    width: 3%;
+    vertical-align: top;
+    margin-top: 12px;
+    margin-left: 15px;
+}
+.item-info {
+    width: 64%;
+}
+.item-menu {
+    width: 33%;
+}
+.menu-edit {
+    background: gray;
+    color: #fff;
+}
+.menu-remove {
+    background: red;
+    color: #fff;
+}
+.w50 {
+    width: 50%;
+}
+.w100 {
+    width: 100%;
+}
+.menu {
+    float: left;
+    line-height: 70px;
+    text-align: center;
+    border-bottom: 1px solid #ccc;
+}
+.list-main {
+    width: 150%;
+    height: 70px;
+    margin-left: 0%;
+}
+.icon-scroller {
+    height: 300px;
+    max-height: 300px;
+}
+.list-item-container navigator{
+    display: table-cell;
+    width:45%;
+    margin-left:0;
+    border-bottom: 1px solid #ccc;
+}
+.list-info {
+    width: 40%;
+    vertical-align: middle;
+    padding-left: 10px;
+}
+.list-info-title {
+    line-height: 42px;
+    font-size: 15px;
+}
+.list-info-description {
+    line-height:30px;
+    font-size:14px;
+    color:#888;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ddd;
+}
+.list-count {
+    width: 5%;
+    vertical-align: middle;
+}
+.form-icon {
+    padding-left: 0 !important;
+}
+.col-md-1 { width: 6%; }
+.col-md-2 { width: 12%; }
+.col-md-3 { width: 18%; }
+.col-md-4 { width: 24%; }
+.col-md-5 { width: 30%; }
+.col-md-6 { width: 36%; }
+.col-md-7 { width: 42%; }
+.col-md-8 { width: 48%; }
+.col-md-9 { width: 54%; }
+.col-md-10 { width: 60%; }
+.col-md-11 { width: 66%; }
+.col-md-12 { width: 72%; }
+.col-md-13 { width: 78%; }
+.col-md-14 { width: 84%; }
+.col-md-15 { width: 90%; }
+.col-md-16 { width: 100%; }
+
+form input, form textarea {
+    background: #eee;
+    padding: 8px 10px 8px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #777;
+}
+
+.has-icon image{
+    width: 32rpx;
+    height: 32rpx;
+    margin-right: 10rpx;
+    float: left;
+}
+.image-container {
+    width: 7%;
+}
+.one-line-input {
+    width: 90%;
+}
+.padding-10 {
+    padding: 10px 0;
+}
+.one-line-input image {
+    width: 40px;
+    height: 40px;
+    margin-left: 20px;
+}
+.clear {
+    clear: both;
+}
+.flex-wrap {
+    flex-wrap: wrap;
+}
